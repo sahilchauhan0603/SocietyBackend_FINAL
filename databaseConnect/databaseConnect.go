@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gorm/models"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
@@ -15,7 +16,8 @@ var DB *gorm.DB
 func ConnectDB() {
 	var err error
 
-	DB, err = gorm.Open(mysql.Open("root:2003@society@/societydb"), &gorm.Config{})
+	dsn := os.Getenv("DB_URL")
+	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
 	if err != nil {
 		panic(" Could not connect mysql DB ")
@@ -72,6 +74,7 @@ func GetPersonByName(c *gin.Context) {
 
 	name := c.Param("first_name")
 	var user models.Person
+
 	if err := DB.Where("first_name = ?", name).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
@@ -82,3 +85,36 @@ func GetPersonByName(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, user)
 }
+
+
+/*func UpdatePersonByName(c *gin.Context) {
+
+	name := c.Param("first_name")
+
+    var existingPerson models.Person
+
+    if err := DB.Where("first_name = ?", name).First(&existingPerson).Error; err != nil {
+        if err == gorm.ErrRecordNotFound {
+            c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+        } else {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        }
+        return
+    }
+
+    var updatedUser models.Person
+    if err := c.ShouldBindJSON(&updatedUser); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+    
+	existingPerson.FirstName = updatedUser.FirstName
+    existingPerson.LastName = updatedUser.LastName
+	existingPerson.Email = updatedUser.Email
+
+    if err := DB.Save(&existingPerson).Error; err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, existingPerson)
+}*/
